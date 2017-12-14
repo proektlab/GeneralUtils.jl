@@ -7,8 +7,9 @@ __precompile__()
 module GeneralUtils
 
 # 3rd party
-using PyCall
-using PyPlot
+# using PyCall
+# using PyPlot
+# using ForwardDiff
 
 export 
     
@@ -34,11 +35,19 @@ export
     install_nearest_point_callback,
     install_callback_reporter,
     remove_BP,
-    remove_all_BPs
+    remove_all_BPs,
 
-
+# Gradient utilities
+    FDversion,
+    make_dict,
+    ForwardDiffZeros,
+    get_eltype,
+    get_value,
+    vgh,
+    keyword_vgh
 
 include("non_gui_utils.jl")
-include("gui_utils.jl")
+# include("gui_utils.jl")
+include("gradient_utils.jl")
 
 end # module
