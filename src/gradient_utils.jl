@@ -299,13 +299,20 @@ if FDversion() < 0.6
     end
 
     value, grad, hess = vgh(tester, [10, 3.1])
-    """ function vgh(func, x0)
-        out = DiffBase.HessianResult(x0)             
-        ForwardDiff.hessian!(out, func, x0)
-        value    = DiffBase.value(out)
-        gradient = DiffBase.gradient(out)
-        hessian  = DiffBase.hessian(out)
-
+    """ function vgh(func, x0, do_hess = true)
+        if do_hess
+            out = DiffBase.HessianResult(x0)             
+            ForwardDiff.hessian!(out, func, x0)
+            value    = DiffBase.value(out)
+            gradient = DiffBase.gradient(out)
+            hessian  = DiffBase.hessian(out)
+        else
+            out = DiffBase.GradientResult(x0)             
+            ForwardDiff.gradient!(out, func, x0)
+            value    = DiffBase.value(out)
+            gradient = DiffBase.gradient(out)
+            hessian  = []
+        end
         return value, gradient, hessian    
     end
 
@@ -346,9 +353,9 @@ if FDversion() < 0.6
 
     value, grad, hess = keyword_vgh((;params...) -> tester(;params...), ["a", "c"], [10, 3.1])
 
-    """ function keyword_vgh(func, args, x0)
+    """ function keyword_vgh(func, args, x0, do_hess = true)
 
-        value, gradient, hessian = vgh(x -> func(;nderivs=length(x), difforder=2, make_dict(args, x)...), x0)
+        value, gradient, hessian = vgh(x -> func(;nderivs=length(x), difforder=2, make_dict(args, x)...), x0, do_hess)
 
         return value, gradient, hessian    
     end
@@ -378,15 +385,24 @@ else
     end
 
     value, grad, hess = vgh(tester, [10, 3.1])
-    """ function vgh(func, x0)
-        out = DiffResults.HessianResult(x0)             
-        out = ForwardDiff.hessian!(out, func, x0)
-        value    = DiffResults.value(out)
-        gradient = DiffResults.gradient(out)
-        hessian  = DiffResults.hessian(out)
-
+    """ function vgh(func, x0, do_hess=true)
+        if do_hess
+            out = DiffResults.HessianResult(x0)             
+            out = ForwardDiff.hessian!(out, func, x0)
+            value    = DiffResults.value(out)
+            gradient = DiffResults.gradient(out)
+            hessian  = DiffResults.hessian(out)
+        else
+            out = DiffResults.GradientResult(x0)             
+            out = ForwardDiff.gradient!(out, func, x0)
+            value    = DiffResults.value(out)
+            gradient = DiffResults.gradient(out)
+            hessian  = []
+        end
         return value, gradient, hessian    
+
     end
+
 
 
     @doc """
@@ -431,9 +447,9 @@ else
 
     value, grad, hess = keyword_vgh((;params...) -> tester(;params...), ["a", "c"], [10, 3.1])
 
-    """ function keyword_vgh(func, args, x0)
+    """ function keyword_vgh(func, args, x0, do_hess=true)
 
-        value, gradient, hessian = vgh(x -> func(;make_dict(args, x)...), x0)
+        value, gradient, hessian = vgh(x -> func(;make_dict(args, x)...), x0, do_hess)
 
         return value, gradient, hessian    
     end
