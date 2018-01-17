@@ -36,6 +36,9 @@ export
     install_callback_reporter,
     remove_BP,
     remove_all_BPs,
+    get_current_fig_position,
+    set_current_fig_position,
+    capture_current_figure_configuration,
 
 # Gradient utilities
     FDversion,

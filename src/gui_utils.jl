@@ -333,3 +333,88 @@ function remove_all_BPs()
     
     global __permanent_BP_store = []
 end
+
+"""
+
+    (x, y, w, h) = get_current_fig_position()   
+
+Works only when pygui(true) and when the back end is QT. Has been tested only with PyPlot.
+"""
+function get_current_fig_position()    
+    # if !contains(pystring(plt[:get_current_fig_manager]()), "FigureManagerQT")
+    try
+        if contains(pystring(plt[:get_current_fig_manager]()), "Tk") 
+            g = split(plt[:get_current_fig_manager]()[:window][:geometry](), ['x', '+'])
+            w = parse(Int64, g[1])
+            h = parse(Int64, g[2])
+            x = parse(Int64, g[3])
+            y = parse(Int64, g[4])
+        elseif contains(pystring(plt[:get_current_fig_manager]()), "QT")
+            x = plt[:get_current_fig_manager]()[:window][:pos]()[:x]()
+            y = plt[:get_current_fig_manager]()[:window][:pos]()[:y]()
+            w = plt[:get_current_fig_manager]()[:window][:width]()
+            h = plt[:get_current_fig_manager]()[:window][:height]()
+        else
+            error("Only know how to work with matplotlib graphics backends that are either Tk or QT")
+        end
+            
+        return (x, y, w, h)
+    catch
+        error("Failed to get current figure position. Is pygui(false) or are you using a back end other than QT or Tk?")
+    end
+end
+
+"""
+
+    set_current_fig_position(x, y, w, h)   
+
+Works only when pygui(true) and when the back end is QT. Has been tested only with PyPlot.
+"""
+function set_current_fig_position(x, y, w, h)    
+    # if !contains(pystring(plt[:get_current_fig_manager]()), "FigureManagerQT")
+    try
+        if contains(pystring(plt[:get_current_fig_manager]()), "Tk") 
+            plt[:get_current_fig_manager]()[:window][:geometry](@sprintf("%dx%d+%d+%d", w, h, x, y))
+        elseif contains(pystring(plt[:get_current_fig_manager]()), "QT")
+            plt[:get_current_fig_manager]()[:window][:setGeometry](x, y, w, h)
+        else
+            error("Only know how to work with matplotlib graphics backends that are either Tk or QT")
+        end
+    catch
+        error("Failed to set current figure position. Is pygui(false) or are you using a back end other than QT?")
+    end
+end
+
+
+"""
+    C = capture_current_figure_configuration()
+
+Collects the positions of all current figures and 
+prints out to the screen code, that can be copy-pasted,
+that would reproduce that positioning configuration.
+
+# PARAMETERS:
+
+None
+
+# RETURNS:
+
+- C    A matrix that is nfigures-by-5 in size. You probably
+    don't want this, you probably want the text printed to
+    the screen, but here just in case.  Each row will have,
+    in order: figure number, x, y, width, height
+"""
+function capture_current_figure_configuration()
+    @printf("The following code will reproduce your current figure placement:\n\n")
+    C = []
+    for f in sort(plt[:get_fignums]())
+        figure(f)
+        x, y, w, h = get_current_fig_position()
+        @printf("figure(%d); set_current_fig_position(%d, %d, %d, %d)   # x, y, width, height\n", 
+            f, x, y, w, h)
+        C = [C ; [f x y w h]]
+    end
+    return C
+end
+
+
