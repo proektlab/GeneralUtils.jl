@@ -167,8 +167,9 @@ BP = install_nearest_point_callback(fighandle, user_callback; user_data=nothing)
 - BP     A PyCall.PyObject kbMonitorModule_kb_monitor object. This object contains the underlying engine
 linking the figure to the callback function. To disconnect that link, call "remove_BP(BP)". To disconnect
 *all* existing BP-function links, call "remove_all_BPs()".
+```
 
-
+```julia
 # EXAMPLE:
 
 pygui(true)
@@ -196,7 +197,10 @@ plot([2,2])
 
 - `capture_current_figure_configuration`: Collects the positions of all current figures and prints out to the screen code, that can be copy-pasted, that would reproduce that positioning configuration.
 
-```julia
+```
+
+C = capture_current_figure_configuration()
+
 # PARAMETERS:
 
 None
