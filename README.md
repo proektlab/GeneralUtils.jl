@@ -170,8 +170,6 @@ linking the figure to the callback function. To disconnect that link, call "remo
 ```
 
 ```julia
-# EXAMPLE:
-
 pygui(true)
 
 function mycallback(xy, r, h, ax)
@@ -216,7 +214,144 @@ None
 
 
 ### Gradient Utilities
+Several of the functions defined here are related to doing differentiation with respect to parameters that are defined as keyword-value parameters in the function to be differentiated. Some functions defined here are:
 
+- `make_dict`: If you're working with keyword-value pairs, you will want to manipulate sets of those. make_dict() is a function that helps you do that, for example, for merging current selected parameter values with a superset of default values (see below).  In addition, make_dict() is central to the gradient- and hessian-taking functions defined here that operate on keyword-value pairs. The reason is that make_dict() can take a vector (as one of its parameters) and turn it into keyword-value pairs, and we need this transformation to work with the ForwardDiff package, since that package only operates on functions of vectors.
+
+The ForwardDiff package takes gradients of functions of vectors. `make_dict()` was originally written as an internal function to keyword_vgh(), essentially for turning keyword-value pairs into a vector that ForwardDiff could work with. The main goal was to make gradient-taking flexible, so the user could easily switch between different chosen parameters. However, make_dict() turns out to be useful externally, for the user, also.
+
+The basic usage of make_dict is to take a list of strings, and a vector of numeric values of the same length, and turn those into a dictionary that Julia can use when passing paramaters. Thus, for example,
+
+> `tester(;a=10, b=20)`
+
+is equivalent to
+
+
+> `tester(;make_dict(["a", "b"], [10, 20])...)`
+
+which can be used to pass all the various desired parameter values as a single vector, which is what ForwardDiff needs, and is how keyword_vgh() works.
+
+> (**An aside on Julia symbols and passing sets of keyword-values to functions**: The `...` is Julia-speak for "this argument contains a set of multiple keyword-value pairs."  In Julia, that can be either a dictionary of Symbol=>value pairs, or a list of (Symbol, value) tuples). 
+
+> `make_dict()` itself returns a dictionary, so `make_dict(["a", "b"], [10, 20])` returns `Dict(:a=>10, :b=>20)`.  A Julia Symbol stands for a variable; you can go back and forth between strings and Symbols by using, for example, `Symbol("a")` to get `:a`, or use `string(:a)` to get `"a"`.)
+
+The typical thing a user will use make_dict() for is to merge paramater values with a superset of default parameter values. For example, suppose you have defined a scalar function
+
+> `function tester(;a=1, b=2, c=3, d=4)`
+
+You can decide you want your default parameter values to be as defined here:
+
+> `defaults = Dict(:a=>10, :b=20, :c=>30, :d=>40)`
+
+Given that, you can call `tester()` with this set of values by calling `tester(;defaults...)`.
+
+
+Now suppose you've done a minimization search over two of these paramaters. Let's say that you indicate your choice of those parameters in `args = ["a", "c"]`. And let's say the resulting values for them are in the two-long vector `pars`.  You want to call `tester()` with the default parameter values _except_ for whatever is indicated in `args` and `pars`. To do that, you use the optional third argument of `make_dict()` as follows:
+
+> `tester(;make_dict(args, pars, defaults)...)`
+
+
+```julia
+julia> make_dict(["this", "that", ["there", 2]], [10, 20, 3, 4])
+Dict{Any,Any} with 3 entries:
+  :this  => 10
+  :that  => 20
+  :there => [3,4]
+
+julia> make_dict(["doo", "gaa"], [10, 20], Dict(:blob=>100, :gaa=>-44))
+Dict{Symbol,Int64} with 3 entries:
+  :gaa  => 20
+  :blob => 100
+  :doo  => 10
+
+```
+- `FDversion`: Here we're going to define a closure over x so that when this code runs, it sets the local variable x to report ForwardDiff's verison number; then we export the function FDversion, that simply returns x.  When we call FDversion(), it simply returns the value of x, stored locally inside the let block. So it is extremely fast.
+
+- `ForwardDiffZeros`: Use instead of zeros(). Creates a matrix of zeros, of size m rows by n columns, with elements appropriate for differentiation by ForwardDiff. If nderivs==0 or difforder==0 then the elements will be regular Float64, not ForwardDiff types.
+
+```
+M = ForwardDiffZeros(m, n; nderivs=0, difforder=0)
+
+PARAMETERS:
+===========
+
+m        Integer, number of rows
+
+n        Integer, number of columns
+
+
+OPTIONAL PARAMETERS:
+====================
+
+nderivs=0       The number of variables that we'll be differentiating with respect to. In other
+                words, this number is equal to the length of the gradient. If this is left as zero (the default) then 
+                the data type will be regular Float64
+
+difforder=0     The order of the derivative we will want to take.  Zero means nothing, stick with
+                regular Float64, 1 means gradient, 2 means hessian
+
+RETURNS:
+========
+
+An m-by-n matrix of zeros that can be used with ForwardDiff.
+```
+
+- `get_eltype`: vars should be a tuple of variables. If any of them is a ForwardDiff Dual, this function returns the typeof of that one (the first one encountered); otherwise it returns Float64.
+
+- `get_value`: If you're going to @print something that might be a ForwardDiff Dual, use this function. It'll return the value of the number if it is a Dual and just the number if it was not a Dual, suitable for
+printing.
+
+```julia
+@printf("%g\n", get_value(x))
+    
+# will work regardless of whether x is a ForwardDiff Dual, a Float64, or an Int64 
+
+```
+
+- `vgh`: Wrapper for ForwardDiff.hessian!() that computes and returns all three of a function's value, gradient, and hessian.
+
+```julia
+function tester(x::Vector)
+
+    return sum(x.*x)
+end
+
+value, grad, hess = vgh(tester, [10, 3.1])
+```
+
+- `keyword_vgh`: Wrapper for vgh() that computes and returns all three of a function's value, gradient, and hessian, but now uses make_dict() to apply it to a function that only takes keyword-value pairs. 
+*Note that func MUST also take the keyword parameters nderivs and difforder*. If you declare any vectors or matrices inside func() (or inside any function inside func()), use ForwardDiffZeros with these two parameters, do NOT use zeros(). Your gradients will come out as zero is you use zeros().
+
+```
+value, gradient, hessian = keyword_vgh(func, args, x0)
+
+# PARAMETERS
+
+* func    A function that takes keyword-value pairs only, including nderivs and difforder.  I.e., it must be a function declared as `function func(; nderivs=0, difforder=0, other_kw_value_pairs)` or as `function func(; nderivs=0, difforder=0, other_kw_value_pairs_dict...)`
+* args    A list of strings indicating names of variables to work with
+* x0      A vector with the value of the variables indicates in args.  **See make_dict() for how to pass both scalars and vectors as variables**
+
+# IMPORTANT JULIA BUG
+
+If you modify func, it is possible that keyword_vgh() will still work on the previously defined version. AACK!  
+That's horrible! Alice Yoon's tip on the workaround: instead of func(), use (;params...) -> func(; params...) and then
+everything will be fine. Perhaps this bug will be fixed in Julia 0.6
+```
+
+```julia
+function tester(;a=10, b=20, c=30, nderivs=0, difforder=0)
+    M = ForwardDiffZeros(3, 3; nderivs=nderivs, difforder=difforder)
+    M[1,1] = a^2*10
+    M[2,2] = b*20
+    M[3,3] = a*sqrt(c)*30.1
+    return trace(M)
+end
+
+value, grad, hess = keyword_vgh(tester, ["a", "c"], [10, 3.1])
+
+value, grad, hess = keyword_vgh((;params...) -> tester(;params...), ["a", "c"], [10, 3.1])
+
+```
 
 ## Testing
 
