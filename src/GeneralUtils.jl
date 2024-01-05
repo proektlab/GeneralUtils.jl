@@ -3,7 +3,7 @@ A package for fitting data from auditory evidence accumulation task (Poisson cli
 to evidence accumulation model.
 """
 
-__precompile__(false)
+__precompile__()
 
 module GeneralUtils
 
