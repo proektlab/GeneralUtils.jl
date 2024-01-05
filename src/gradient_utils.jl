@@ -1,4 +1,6 @@
 using ForwardDiff
+using UUIDs
+import Pkg
 
 """
 dict = make_dict(argstrings, x, [starting_dict=Dict()] )
@@ -83,12 +85,16 @@ end
 # x to report ForwardDiff's verison number; then we export the function FDversion, that simply returns
 # x.  When we call FDversion(), it simply returns the value of x, stored locally inside the let block.
 # So it is extremely fast.
+const forwardDiffUUID = UUID("f6369f11-7733-5829-9624-2563aa707210")
 let x 
+    deps = Pkg.dependencies()
+    local version
     try
-        x = Pkg.installed("ForwardDiff").major + 0.1*Pkg.installed("ForwardDiff").minor
+        version = deps[forwardDiffUUID].version
     catch
         error("Is ForwardDiff really installed???")
     end
+    x = version.major + 0.1*version.minor
 
     global FDversion
 
@@ -255,9 +261,9 @@ will work regardless of whether x is a ForwardDiff Dual, a Float64, or an Int64
         if typeof(x[1])<:ForwardDiff.Dual
             y = zeros(size(x)); 
             if typeof(x[1].value)<:ForwardDiff.Dual  # nested, taking 2nd derivative
-                for i=1:length(y); y[i] = x[i].value.value; end;
+                for i in eachindex(y); y[i] = x[i].value.value; end;
             else # not nested, 1st derivative
-                for i=1:length(y); y[i] = x[i].value; end;
+                for i in eachindex(y) y[i] = x[i].value; end;
             end
             return y
         elseif typeof(x[1])<:Int64 || typeof(x[1])<:Float64

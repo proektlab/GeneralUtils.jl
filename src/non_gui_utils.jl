@@ -1,3 +1,5 @@
+using Printf
+
 """
     append_to_file(filename, str)
 
@@ -115,7 +117,7 @@ If passed a symbol (which must evaluate to a vector), then prints the string for
 an equals sign, the vector, and ends by adding a carriage return \n.
 """
 function print_vector(vec)
-    print_vector(STDOUT, vec)
+    print_vector(stdout, vec)
 end
 
 
@@ -155,7 +157,7 @@ If passed a symbol (which must evaluate to a vector), then prints the string for
 an equals sign, the vector, and ends by adding a carriage return \n.
 """
 function print_vector_g(vec)
-    print_vector_g(STDOUT, vec)
+    print_vector_g(stdout, vec)
 end
 
 
@@ -215,9 +217,9 @@ print(beta); print("\n")
 function two_level_copy(x)
     if typeof(x)<:Array
         y = copy(x)
-        for i=1:length(x)
-            if typeof(x[i])<:Tuple; y[i]=x[i]; 
-            else y[i] = copy(x[i]) end;
+        for elem in x
+            if typeof(elem)<:Tuple; y[i]=elem; 
+            else y[i] = copy(elem) end;
         end
     elseif typeof(x)<:Dict
         y = copy(x)
@@ -259,8 +261,8 @@ function next_file(fbasename, ndigits)
         fnames = readdir()
     end
     matched_filenames = Array{Bool}(length(fnames))
-    for i=1:length(fnames)
-        matched_filenames[i] = ismatch(Regex(@sprintf("^%s", myfile)), fnames[i])
+    for fname in fnames
+        matched_filenames[i] = ismatch(Regex(@sprintf("^%s", myfile)), fname)
     end
     
     mynum = length(find(matched_filenames))+1
@@ -352,15 +354,15 @@ vectorize_dict(a, [:this, :that])
 """
 function vectorize_dict(dictionary, ks)
     output = Array{Float64}(size(ks))
-    for i=1:length(ks)
-        if haskey(dictionary, ks[i])
-            output[i] = dictionary[ks[i]]
-        elseif typeof(ks[i])<:Symbol && haskey(dictionary, string(ks[i]))
-            output[i] = dictionary[string(ks[i])]
-        elseif typeof(ks[i])<:String && haskey(dictionary, Symbol(ks[i]))
-            output[i] = dictionary[Symbol(ks[i])]
+    for key in ks
+        if haskey(dictionary, key)
+            output[i] = dictionary[key]
+        elseif typeof(key)<:Symbol && haskey(dictionary, string(key))
+            output[i] = dictionary[string(key)]
+        elseif typeof(key)<:String && haskey(dictionary, Symbol(key))
+            output[i] = dictionary[Symbol(key)]
         else
-            print("Troublesome key: "); print(ks[i]); print("\n")
+            print("Troublesome key: "); print(key); print("\n")
             error("Found neither key nor string(key) nor Symbol(key) in the dictionary")
         end
     end

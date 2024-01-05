@@ -2,7 +2,8 @@
 A package for fitting data from auditory evidence accumulation task (Poisson clicks task) 
 to evidence accumulation model.
 """
-__precompile__()
+
+__precompile__(false)
 
 module GeneralUtils
 

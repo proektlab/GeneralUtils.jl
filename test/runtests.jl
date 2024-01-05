@@ -1,5 +1,8 @@
 using GeneralUtils
-using Base.Test
+using Test
+using Printf
+using LinearAlgebra
+import ForwardDiff
 
 # write your own tests here
 # @test 1 == 2
@@ -225,7 +228,7 @@ else
         M[1,1] = a^2*10
         M[2,2] = b*20
         M[3,3] = a*sqrt(c)*30.1
-        return trace(M)
+        return tr(M)
     end
 end
     

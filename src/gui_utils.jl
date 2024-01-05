@@ -21,7 +21,7 @@ end
     ax = axisWidthChange(factor; lock="c", ax=nothing)
 """
 function axisWidthChange(factor; lock="c", ax=nothing)
-    if ax==nothing; ax=gca(); end
+    if isnothing(ax); ax=gca(); end
     x, y, w, h = ax[:get_position]()[:bounds]
     
     if lock=="l"; 
@@ -41,7 +41,7 @@ end
 ax = axisHeightChange(factor; lock="c", ax=nothing)
 """
 function axisHeightChange(factor; lock="c", ax=nothing)
-    if ax==nothing; ax=gca(); end
+    if isnothing(ax); ax=gca(); end
     x, y, w, h = ax[:get_position]()[:bounds]
     
     if lock=="b"; 
@@ -61,7 +61,7 @@ end
    ax = axisMove(xd, yd; ax=nothing)
 """
 function axisMove(xd, yd; ax=nothing)
-    if ax==nothing; ax=gca(); end
+    if isnothing(ax); ax=gca(); end
     x, y, w, h = ax[:get_position]()[:bounds]
 
     x += xd
@@ -83,13 +83,13 @@ If no axis is passed, uses gca() to work with the current axis.
 """
 function remove_xtick_labels(ax=nothing)
 
-    if ax==nothing
+    if isnothing(ax)
         ax = gca()
     end
     
     if typeof(ax) <: Array
-        for i=1:length(ax)
-            remove_xtick_labels(ax[i])
+        for a in ax
+            remove_xtick_labels(a)
         end
         return
     end
@@ -118,13 +118,13 @@ If no axis is passed, uses gca() to work with the current axis.
 """
 function remove_ytick_labels(ax=nothing)
 
-    if ax==nothing
+    if isnothing(ax)
         ax = gca()
     end
     
     if typeof(ax) <: Array
-        for i=1:length(ax)
-            remove_ytick_labels(ax[i])
+        for a in ax
+            remove_ytick_labels(ax)
         end
         return
     end
@@ -223,7 +223,7 @@ function install_nearest_point_callback(fighandle, user_callback; user_data=noth
     function point_nearest_to_click(BP)
         bpe = BP[:buttonlist]()
         # Remove any leading clicks that weren't inside an axis:
-        while length(bpe)>0 && ((bpe[1][1]==nothing) || (bpe[1][1]==Void))
+        while length(bpe)>0 && ((isnothing(bpe[1][1])) || (bpe[1][1]==Void))
             bpe = bpe[2:end]
         end
         if length(bpe)>0
@@ -240,27 +240,27 @@ function install_nearest_point_callback(fighandle, user_callback; user_data=noth
             dy     = nothing    # closest data point y position
 
             # Look over all children of the axis:
-            for i=1:length(ch)
+            for child in ch
                 # But only consider line objects:
-                if contains(pystring(ch[i]), "lines.Line2D")
-                    D = ch[i][:get_data]()    # D will be a Tuple with xdata, ydata vectors
-                elseif contains(pystring(ch[i]), "PathCollection")
-                    D = ch[i][:get_offsets]()    # D will be a matrix with xdata, ydata columns
+                if contains(pystring(child), "lines.Line2D")
+                    D = child[:get_data]()    # D will be a Tuple with xdata, ydata vectors
+                elseif contains(pystring(child), "PathCollection")
+                    D = child[:get_offsets]()    # D will be a matrix with xdata, ydata columns
                     D = (D[:,1], D[:,2])         # Turn it into a Tuple like for Line2D objects
                 end
-                if contains(pystring(ch[i]), "lines.Line2D") || contains(pystring(ch[i]), "PathCollection")
+                if contains(pystring(child), "lines.Line2D") || contains(pystring(child), "PathCollection")
                     J = (D[1] - x).^2 + (D[2] - y).^2
                     ix = indmin(J)
-                    if idx == nothing || J[ix] < minJ   # if we did not yet have a minimum candidate or this one is better
-                        idx = ix; minJ = J[ix]; handle = ch[i]   # store our candidate
+                    if isnothing(idx) || J[ix] < minJ   # if we did not yet have a minimum candidate or this one is better
+                        idx = ix; minJ = J[ix]; handle = child   # store our candidate
                         dx = D[1][ix]; dy = D[2][ix]
                     end
                 end
             end
 
             # @printf("install: Am about to call the user callback\n")
-            if minJ != nothing
-                if BP[:get_userdata]() == nothing
+            if !isnothing(minJ)
+                if isnothing(BP[:get_userdata]())
                     user_callback((dx,dy), sqrt(minJ), handle, ax)
                 else
                     user_callback((dx,dy), sqrt(minJ), handle, ax, BP[:get_userdata]())
