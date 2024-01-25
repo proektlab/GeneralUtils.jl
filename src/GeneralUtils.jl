@@ -43,6 +43,7 @@ export
 # Gradient utilities
     FDversion,
     make_dict,
+    to_args_format,
     ForwardDiffZeros,
     get_eltype,
     get_value,

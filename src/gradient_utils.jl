@@ -79,7 +79,14 @@ function make_dict(args, x, starting_dict=Dict())
         i = i+1; j=j+1
     end
     return kwargs
-end 
+end
+
+"Reverse of make_dict - converts either a Dict or a NamedTuple to args and x"
+function to_args_format(mapping)
+    args = [length(v) > 1 ? [k, length(v)] : k for (k, v) in pairs(mapping)]
+    x = vcat(values(mapping)...)
+    return args, x
+end
 
 # Here we're going to define a closure over x so that when this code runs, it sets the local variable
 # x to report ForwardDiff's verison number; then we export the function FDversion, that simply returns
@@ -462,8 +469,7 @@ else
 
     "Version that takes arguments & default values as keyword arguments. Each value can be either a scalar or vector."
     function keyword_vgh(func, do_hess=true; x0...)
-        args = [length(v) > 1 ? [k, length(v)] : k for (k, v) in pairs(x0)]
-        x0vals = vcat(x0...)
+        args, x0vals = to_args_format(x0)
         return keyword_vgh(func, args, x0vals, do_hess)
     end
 end
