@@ -47,7 +47,7 @@ function make_dict(args, x, starting_dict=Dict())
     # For error diagnostics, check that the length of the param vector specified in args matches the length of x
     nargs = 0
     for i in [1:length(args);]
-        if typeof(args[i])==String # if the entry in args is a string, then there's one corresponding scalar entry in x0
+        if typeof(args[i]) <: Union{String, Symbol} # if the entry in args is a string, then there's one corresponding scalar entry in x0
             nargs += 1
         else
             nargs += args[i][2]    # otherwise, the entry in args should be a  [varnamestring, nvals] vector, 
@@ -65,7 +65,7 @@ function make_dict(args, x, starting_dict=Dict())
     kwargs = starting_dict;
     i = 1; j=1
     while i<=length(args)
-        if typeof(args[i])==String
+        if typeof(args[i]) <: Union{String, Symbol}
             kwargs = merge(kwargs, Dict(Symbol(args[i]) => x[j]))
         else
             if length(args[i]) == 2
@@ -459,5 +459,11 @@ else
 
         return value, gradient, hessian    
     end
-    
+
+    "Version that takes arguments & default values as keyword arguments. Each value can be either a scalar or vector."
+    function keyword_vgh(func, do_hess=true; x0...)
+        args = [length(v) > 1 ? [k, length(v)] : k for (k, v) in pairs(x0)]
+        x0vals = vcat(x0...)
+        return keyword_vgh(func, args, x0vals, do_hess)
+    end
 end
