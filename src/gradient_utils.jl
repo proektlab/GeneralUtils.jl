@@ -83,7 +83,7 @@ end
 
 "Reverse of make_dict - converts either a Dict or a NamedTuple to args and x"
 function to_args_format(mapping)
-    args = [length(v) > 1 ? [k, length(v)] : k for (k, v) in pairs(mapping)]
+    args = [length(v) > 1 ? [string(k), length(v)] : string(k) for (k, v) in pairs(mapping)]
     x = vcat(values(mapping)...)
     return args, x
 end
